@@ -1,0 +1,22 @@
+#!/bin/sh
+
+has_errors=0
+
+# 獲取git分支
+branchName=$(git branch --show-current)
+
+# golangci-lint 檢查
+if golangci-lint --version >/dev/null 2>&1; then # 检测是否安装
+    echo 'golangci-lint 檢查中' >&2
+    result="$(golangci-lint run)"
+    if test -n "$result"; then
+        echo "$result"
+        has_errors=1
+    fi
+    echo 'golangci-lint 檢查結束' >&2
+else
+    echo 'Error: golangci-lint not install. Run: "brew install golangci-lint"' >&2
+    exit 1
+fi
+
+exit $has_errors

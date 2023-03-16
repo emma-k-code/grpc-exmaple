@@ -1,0 +1,91 @@
+run:
+  # Timeout for analysis, e.g. 30s, 5m.
+  # Default: 1m
+  timeout: 1m
+  # Exit code when at least one issue was found.
+  # Default: 1
+  issues-exit-code: 1
+  # Define the Go version limit.
+  # Mainly related to generics support since go1.18.
+  # Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.18
+  go: '1.18'
+
+linters-settings:
+  dogsled:
+    # Checks assignments with too many blank identifiers.
+    # Default: 2
+    max-blank-identifiers: 3
+  errcheck:
+    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
+    # Such cases aren't reported by default.
+    # Default: false
+    check-type-assertions: true
+  exhaustive:
+    default-signifies-exhaustive: true
+  goconst:
+    # Minimal length of string constant.
+    # Default: 3
+    min-len: 2
+    # Minimum occurrences of constant string count to trigger issue.
+    # Default: 3
+    min-occurrences: 3
+  gocritic:
+    disabled-checks:
+      - unnamedResult
+      - commentedOutCode
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+  govet:
+    check-shadowing: true
+    enable:
+      - nilness
+  nolintlint:
+    require-explanation: true
+    require-specific: true
+  gomnd:
+    ignored-files:
+      - 'package/*'
+  wsl:
+    allow-trailing-comment: true
+
+
+linters:
+  # Disable all linters.
+  # Default: false
+  disable-all: true
+  # Enable specific linter
+  # https://golangci-lint.run/usage/linters/#enabled-by-default
+  enable:
+    - bodyclose # checks whether HTTP response body is closed successfully
+    - depguard # Go linter that checks if package imports are in a list of acceptable packages
+    - dogsled # Checks assignments with too many blank identifiers (e.g. x, , , _, := f())
+    - dupl # Tool for code clone detection
+    - errcheck # 檢查回傳的 error 是否有被檢查
+    - exhaustive # check exhaustiveness of enum switch statements
+    - exportloopref # checks for pointers to enclosing loop variables
+    - goconst # Finds repeated strings that could be replaced by a constant
+    - gocritic # 規範檢查工具
+    - gocyclo # 檢查迴圈複雜度
+    - gofmt # gofmt格式檢查
+    - goimports # goimport格式檢查
+    - gosec # 安全性檢查
+    - gosimple # Linter for Go source code that specializes in simplifying code
+    - govet # vet檢查
+    - ineffassign # 檢查變數是否有被使用
+    - misspell # 檢查拼字
+    - nolintlint # nolint註解格式檢查
+    - prealloc # Finds slice declarations that could potentially be pre-allocated
+    - predeclared # find code that shadows one of Go's predeclared identifiers
+    - revive # 比golint更快的規範檢查工具
+    - staticcheck # staticcheck規範工具
+    - typecheck # Like the front-end of a Go compiler, parses and type-checks Go code
+    - unconvert # 檢查不必要的型態轉換
+    - unparam # 檢查無使用的 function parameter
+    - unused # Checks Go code for unused constants, variables, functions and types
+    - whitespace # Tool for detection of leading and trailing whitespace
+    - wrapcheck # Checks that errors returned from external packages are wrapped
+    - wsl # Whitespace Linter - Forces you to use empty lines!

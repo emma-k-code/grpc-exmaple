@@ -1,0 +1,99 @@
+#!/bin/sh
+
+has_errors=0
+
+# 獲取git暫存的所有go代碼
+# --cached 暫存的
+# --name-only 只顯示名字
+# --diff-filter=ACM 過濾暫存文件，A=Added C=Copied M=Modified, 即篩選出添加/複製/修改的文件
+allgofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '.go$')
+
+gofiles=()
+godirs=()
+for allfile in ${allgofiles[@]}; do
+	# 過濾vendor的
+	# 過濾prootobuf自動生產的文件
+	if [[ $allfile == "vendor"* || $allfile == *".pb.go" ]]; then
+		continue
+	fi
+
+	gofiles+=("$allfile")
+
+	# 去除重複資料夾
+	existdir=0
+	dir=$(echo "$allfile" | xargs -n1 dirname | sort -u)
+	for somedir in ${godirs[@]}; do
+		if [[ $dir == $somedir ]]; then
+			existdir=1
+			break
+		fi
+	done
+
+	if [[ $existdir -eq 0 ]]; then
+		godirs+=("$dir")
+	fi
+done
+
+[ -z "$gofiles" ] && exit 0
+
+# gofmt 格式化
+unformatted=$(gofmt -l ${gofiles[@]})
+if [ -n "$unformatted" ]; then
+	echo >&2 "gofmt FAIL:\n Run following command:"
+	for f in ${unformatted[@]}; do
+		echo >&2 " gofmt -w $PWD/$f"
+	done
+	echo "\n"
+	has_errors=1
+fi
+
+# goimports 自動導入包
+if goimports >/dev/null 2>&1; then # 檢查是否有安裝
+	unimports=$(goimports -l ${gofiles[@]})
+	if [ -n "$unimports" ]; then
+		echo >&2 "goimports FAIL:\nRun following command:"
+		for f in ${unimports[@]}; do
+			echo >&2 " goimports -w $PWD/$f"
+		done
+		echo "\n"
+		has_errors=1
+	fi
+else
+	echo 'Error: goimports not install. Run: "go install golang.org/x/tools/cmd/goimports"' >&2
+	exit 1
+fi
+
+# golint 程式碼規範檢查
+if golint >/dev/null 2>&1; then # 檢查是否有安裝
+	lint_errors=false
+	for file in ${gofiles[@]}; do
+		lint_result="$(golint $file)" # run golint
+		if test -n "$lint_result"; then
+			echo "golint '$file':\n$lint_result"
+			lint_errors=true
+			has_errors=1
+		fi
+	done
+	if [ $lint_errors = true ]; then
+		echo "\n"
+	fi
+else
+	echo 'Error: golint not install. Run: "go install golang.org/x/lint/golint@latest"' >&2
+	exit 1
+fi
+
+# go vet 静态错误检查
+show_vet_header=true
+for dir in ${godirs[@]}; do
+	vet=$(go vet $PWD/$dir 2>&1)
+	if [ -n "$vet" -a $show_vet_header = true ]; then
+		echo "govet FAIL:"
+		show_vet_header=false
+	fi
+	if [ -n "$vet" ]; then
+		echo "$vet\n"
+		has_errors=1
+	fi
+done
+
+exit $has_errors
